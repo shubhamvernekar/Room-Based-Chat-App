@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.IO Client</title>
+  <script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #messages { margin-bottom: 20px; }
+    #messages div { margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h1>Socket.IO Chat</h1>
+  <div id="messages"></div>
+  <input id="messageInput" placeholder="Type a message..." />
+  <button id="sendButton">Send</button>
+  <div id="joinroom"></div>
+  <input id="roomid" placeholder="Type a roomid..." />
+  <button id="joinroombtn">Join Room</button>
+  <div id="createroom"></div>
+  <button id="createroombtn">Create Room</button>
+
+  <script>
+    // Connect to the Socket.IO server
+    const socket = io();
+
+    // Message container
+    const messagesDiv = document.getElementById('messages');
+
+    let roomId = ""
+
+    // Send a message to the server
+    document.getElementById('sendButton').addEventListener('click', () => {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (message) {
+        socket.emit('send-message', {roomId: roomId, msg: message}); // Emit 'message' event
+        addMessage(`You: ${message}`);
+        input.value = '';
+      }
+    });
+
+    // Add a new message to the UI
+    function addMessage(message) {
+      const div = document.createElement('div');
+      div.textContent = message;
+      messagesDiv.appendChild(div);
+    }
+
+    document.getElementById('createroombtn').addEventListener('click', () => {
+      socket.emit('create-room');
+    });
+
+    socket.on('room-created', (roomid) => {
+      console.log("Room created, room Id: ", roomid);
+      roomId = roomid;
+    })
+
+    socket.on('connect', () => {
+      console.log("Socket connect to server");
+    })
+
+    document.getElementById('joinroombtn').addEventListener('click', () => {
+      const input = document.getElementById('roomid');
+      const roomid = input.value.trim();
+      if (roomid) {
+        socket.emit('join-room', roomid);
+        roomId = roomid;
+      }
+    });
+
+    socket.on('join-room', (msg) => {
+      console.log(msg);
+    })
+
+    // Listen for messages from the server
+    socket.on('received-message', (message) => {
+      addMessage(`${message.userId} : ${message.msg}`);
+    });
+  </script>
+</body>
+</html>
